@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/smofe/go-prototype/models"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
@@ -107,16 +109,18 @@ func handleRequests() {
 }
 
 func main() {
-	var err error
-	database, err = gorm.Open("sqlite3", "patients.db")
-	if err != nil {
-		panic("failed to connect database")
-	}
-	fmt.Println("connected to db")
-	database.AutoMigrate(&Patient{})
-	database.AutoMigrate(&PatientState{})
+	// var err error
+	// database, err = gorm.Open("sqlite3", "patients.db")
+	// if err != nil {
+	// 	panic("failed to connect database")
+	// }
+	// fmt.Println("connected to db")
+	// database.AutoMigrate(&Patient{})
+	// database.AutoMigrate(&PatientState{})
 
-	defer database.Close()
+	// defer database.Close()
+
+	models.ConnectDatabase()
 
 	handleRequests()
 }
