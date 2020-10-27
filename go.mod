@@ -7,6 +7,8 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/mattn/go-sqlite3 v1.14.4 // indirect
 	github.com/smofe/go-prototype/models v0.0.0-00010101000000-000000000000
+	github.com/smofe/go-prototype/controllers v0.0.0-00010101000000-000000000000
 )
 
 replace github.com/smofe/go-prototype/models => ./models
+replace github.com/smofe/go-prototype/controllers => ./controllers

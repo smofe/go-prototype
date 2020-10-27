@@ -93,7 +93,7 @@ func handleRequests() {
 	myRouter := gin.Default()
 	myRouter.GET("/", homePage)
 	myRouter.POST("/patients", createNewPatient)
-	myRouter.GET("/patients", returnAllPatients)
+	myRouter.GET("/patients", controllers.returnAllPatients)
 	myRouter.GET("/patients/{id}", returnSinglePatient)
 	myRouter.POST("/patientstates", createNewPatientState)
 	myRouter.GET("/patientstates", returnAllPatientStates)
