@@ -1,18 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/smofe/go-prototype/models"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
-
-var database *gorm.DB
 
 func homePage(context *gin.Context) {
 	// fmt.Fprintf(writer, "Hello World")
@@ -20,9 +16,8 @@ func homePage(context *gin.Context) {
 }
 
 func returnAllPatients(context *gin.Context) {
-	fmt.Println("Endpoint Hit: returnAllArticles")
-	var patients []Patient
-	database.Find(&patients)
+	var patients []models.Patient
+	models.DB.Find(&patients)
 	context.JSON(http.StatusOK, patients)
 }
 
@@ -91,7 +86,7 @@ func startGame(context *gin.Context) {
 }
 
 func resetDataBase(context *gin.Context) {
-	database.Exec("DELETE FROM patients")
+	//database.Exec("DELETE FROM patients")
 }
 
 func handleRequests() {
@@ -120,7 +115,7 @@ func main() {
 
 	// defer database.Close()
 
-	models.ConnectDatabase()
+	models.ConnectDataBase()
 
 	handleRequests()
 }
