@@ -1,120 +1,86 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/smofe/go-prototype/controllers"
+	_ "github.com/smofe/go-prototype/controllers"
 	"github.com/smofe/go-prototype/models"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
-func homePage(context *gin.Context) {
-	// fmt.Fprintf(writer, "Hello World")
-	// fmt.Println("Endpoint Hit: homePage")
-}
+func startGame(context *gin.Context) {
+	// var patients []models.Patient
+	// models.DB.Find(&patients)
+	// for _, patient := range patients {
+	// 	var patientstate models.PatientState
+	// 	models.DB.Model(patient).Related(&patientstate)
+	// 	_, conditionMet := models.DB.Model(patient).Get(patientstate.ConditionPrimary)
+	// 	fmt.Println(conditionMet)
 
-func returnAllPatients(context *gin.Context) {
+	// }
+	// Initialize phase change times
 	var patients []models.Patient
 	models.DB.Find(&patients)
-	context.JSON(http.StatusOK, patients)
-}
+	for _, patient := range patients {
+		var patientstate models.PatientState
+		models.DB.Model(patient).Related(&patientstate)
+		patient.NextPhaseTimeStamp = time.Now().Add(time.Duration(patientstate.Duration) * time.Second)
+		models.DB.Save(patient)
+		fmt.Println("Next Phase Change of ", patient.Name, " is at: ", patient.NextPhaseTimeStamp)
+	}
 
-func returnSinglePatient(context *gin.Context) {
-	// vars := mux.Vars(request)
-	// key := vars["id"]
+	// Start asynchronous timer that checks phase changes every second
+	ticker := time.NewTicker(time.Second)
+	done := make(chan bool)
 
-	// var patient Patient
-	// database.First(&patient, key)
-	// json.NewEncoder(writer).Encode(patient)
-}
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				var patients []models.Patient
+				models.DB.Find(&patients)
+				for _, patient := range patients {
+					//fmt.Println("current time: ", time.Now())
+					//fmt.Println(patient.Name, " time: ", patient.NextPhaseTimeStamp)
+					if patient.NextPhaseTimeStamp.Before(time.Now()) {
+						fmt.Println(patient.Name + " just changed its state")
+						var currentState models.PatientState
+						models.DB.Model(patient).Related(&currentState)
+						patient.PatientStateID = currentState.NextStateA
+						models.DB.Save(patient)
+						var nextState models.PatientState
+						models.DB.Model(patient).Related(&nextState)
+						patient.NextPhaseTimeStamp = time.Now().Add(time.Duration(nextState.Duration) * time.Second)
+						models.DB.Save(patient)
+					}
+				}
+			}
+		}
+	}()
 
-func createNewPatient(context *gin.Context) {
-	// requestBody, _ := ioutil.ReadAll(request.Body)
-	// var patient Patient
-	// json.Unmarshal(requestBody, &patient)
-	// fmt.Println(patient)
-	// database.Create(&patient)
-	// json.NewEncoder(writer).Encode(patient)
-}
-
-func returnAllPatientStates(context *gin.Context) {
-	// var patientstates []PatientState
-	// database.Find(&patientstates)
-	// for _, patientstate := range patientstates {
-	// 	json.NewEncoder(writer).Encode(patientstate)
-	// }
-}
-
-func returnSinglePatientState(context *gin.Context) {
-	// vars := mux.Vars(request)
-	// key := vars["id"]
-
-	// var patientstate PatientState
-	// database.First(&patientstate, key)
-	// json.NewEncoder(writer).Encode(patientstate)
-}
-
-func createNewPatientState(context *gin.Context) {
-	// requestBody, _ := ioutil.ReadAll(request.Body)
-	// var patientstate PatientState
-	// json.Unmarshal(requestBody, &patientstate)
-	// database.Create(&patientstate)
-	// json.NewEncoder(writer).Encode(patientstate)
-}
-
-func startGame(context *gin.Context) {
-	// ticker := time.NewTicker(time.Second)
-	// done := make(chan bool)
-
-	// go func() {
-	// 	for {
-	// 		select {
-	// 		case <-done:
-	// 			return
-	// 		case <-ticker.C:
-	// 			for _, patient := range Patients {
-	// 				if patient.NextPhase.Before(time.Now()) {
-	// 					fmt.Println(patient.Name + " just changed its state")
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }()
-
-}
-
-func resetDataBase(context *gin.Context) {
-	//database.Exec("DELETE FROM patients")
 }
 
 func handleRequests() {
 	myRouter := gin.Default()
-	myRouter.GET("/", homePage)
-	myRouter.POST("/patients", createNewPatient)
-	myRouter.GET("/patients", controllers.returnAllPatients)
-	myRouter.GET("/patients/{id}", returnSinglePatient)
-	myRouter.POST("/patientstates", createNewPatientState)
-	myRouter.GET("/patientstates", returnAllPatientStates)
-	myRouter.GET("/patientstates/{id}", returnSinglePatientState)
+	myRouter.POST("/patients", controllers.CreatePatient)
+	myRouter.GET("/patients", controllers.ReturnAllPatients)
+	myRouter.GET("/patients/:id", controllers.ReturnSinglePatient)
+	myRouter.POST("/patientstates", controllers.CreatePatientState)
+	myRouter.GET("/patientstates", controllers.ReturnAllPatientStates)
+	myRouter.GET("/patientstates/:id", controllers.ReturnSinglePatientState)
 	myRouter.GET("/startgame", startGame)
-	myRouter.GET("/resetdb", resetDataBase)
 	log.Fatal(http.ListenAndServe(":8000", myRouter))
 }
 
 func main() {
-	// var err error
-	// database, err = gorm.Open("sqlite3", "patients.db")
-	// if err != nil {
-	// 	panic("failed to connect database")
-	// }
-	// fmt.Println("connected to db")
-	// database.AutoMigrate(&Patient{})
-	// database.AutoMigrate(&PatientState{})
-
-	// defer database.Close()
-
 	models.ConnectDataBase()
 
 	handleRequests()

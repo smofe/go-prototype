@@ -9,12 +9,12 @@ import (
 //Patient defines all static properties of a patient that are independet of the current phase
 type Patient struct {
 	gorm.Model
-	ID                 uint         `json:"id" gorm:"primary_key"`
-	Name               string       `json:"title"`
+	Name               string       `json:"name"`
 	Age                int          `json:"age"`
 	Gender             string       `json:"gender"`
 	HairColor          string       `json:"hairColor"`
-	PatientState       PatientState `json:"patientState"` //Foreign key to current patient state
+	PatientStateID     int          `json:"patientStateID"`
+	PatientState       PatientState `gorm:"association_autoupdate:false" gorm:"association_autocreate:false" json:"patientState"` //Foreign key to current patient state
 	NextPhaseTimeStamp time.Time    `json:"nextPhaseTimeStamp"`
 
 	MeasureRecoveryPosition bool `json:"measureRecoveryPosition"`

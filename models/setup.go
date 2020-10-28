@@ -15,8 +15,8 @@ func ConnectDataBase() {
 		panic("Failed to connect to database!")
 	}
 
-	database.AutoMigrate(&Patient{})
-	database.AutoMigrate(&PatientState{})
+	database.AutoMigrate(&Patient{}, PatientState{})
+	database.Model(&PatientState{}).AddForeignKey("patient_id", "patients(id)", "RESTRICT", "RESTRICT")
 
 	DB = database
 }
