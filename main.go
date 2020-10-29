@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -20,11 +19,13 @@ func startGame(context *gin.Context) {
 	// for _, patient := range patients {
 	// 	var patientstate models.PatientState
 	// 	models.DB.Model(patient).Related(&patientstate)
-	// 	_, conditionMet := models.DB.Model(patient).Get(patientstate.ConditionPrimary)
-	// 	fmt.Println(conditionMet)
+	// 	// TODO: Change ugly meta-programming with reflect to a more elegant solution
+	// 	// Get the value of the Field of the patient specified by the string "patientstate.ConditionPrimary"
+	// 	test2 := reflect.Indirect(reflect.ValueOf(&patient)).FieldByName(patientstate.ConditionPrimary)
+	// 	fmt.Println(test2)
 
 	// }
-	// Initialize phase change times
+	//Initialize phase change times
 	var patients []models.Patient
 	models.DB.Find(&patients)
 	for _, patient := range patients {
@@ -48,14 +49,21 @@ func startGame(context *gin.Context) {
 				var patients []models.Patient
 				models.DB.Find(&patients)
 				for _, patient := range patients {
-					//fmt.Println("current time: ", time.Now())
-					//fmt.Println(patient.Name, " time: ", patient.NextPhaseTimeStamp)
 					if patient.NextPhaseTimeStamp.Before(time.Now()) {
 						fmt.Println(patient.Name + " just changed its state")
 						var currentState models.PatientState
 						models.DB.Model(patient).Related(&currentState)
-						patient.PatientStateID = currentState.NextStateA
+
+						if *patient.ConditionPrimary {
+							patient.PatientStateID = currentState.NextStateC
+						} else if *patient.ConditionSecondary {
+							patient.PatientStateID = currentState.NextStateB
+						} else {
+							patient.PatientStateID = currentState.NextStateA
+						}
 						models.DB.Save(patient)
+
+						//get duration of the new state to update the next phase change timestamp of the patient
 						var nextState models.PatientState
 						models.DB.Model(patient).Related(&nextState)
 						patient.NextPhaseTimeStamp = time.Now().Add(time.Duration(nextState.Duration) * time.Second)
@@ -68,20 +76,31 @@ func startGame(context *gin.Context) {
 
 }
 
-func handleRequests() {
+func homePage(context *gin.Context) {
+	context.JSON(http.StatusOK, gin.H{
+		"hello": "world",
+	})
+}
+
+func handleRequests() *gin.Engine {
 	myRouter := gin.Default()
 	myRouter.POST("/patients", controllers.CreatePatient)
 	myRouter.GET("/patients", controllers.ReturnAllPatients)
 	myRouter.GET("/patients/:id", controllers.ReturnSinglePatient)
+	myRouter.PATCH("/patients/:id", controllers.UpdatePatient)
 	myRouter.POST("/patientstates", controllers.CreatePatientState)
 	myRouter.GET("/patientstates", controllers.ReturnAllPatientStates)
 	myRouter.GET("/patientstates/:id", controllers.ReturnSinglePatientState)
 	myRouter.GET("/startgame", startGame)
-	log.Fatal(http.ListenAndServe(":8000", myRouter))
+	myRouter.GET("/", homePage)
+	//log.Fatal(http.ListenAndServe(":8000", myRouter))
+
+	return myRouter
 }
 
 func main() {
 	models.ConnectDataBase()
 
-	handleRequests()
+	router := handleRequests()
+	router.Run(":8000")
 }

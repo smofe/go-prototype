@@ -17,8 +17,11 @@ type Patient struct {
 	PatientState       PatientState `gorm:"association_autoupdate:false" gorm:"association_autocreate:false" json:"patientState"` //Foreign key to current patient state
 	NextPhaseTimeStamp time.Time    `json:"nextPhaseTimeStamp"`
 
-	MeasureRecoveryPosition bool `json:"measureRecoveryPosition"`
-	MeasureVentilated       bool `json:"measureVentilated"`
-	MeasureTourniquet       bool `json:"measureTourniquet"`
-	MeasureInfusion         bool `json:"measureInfusion"`
+	MeasureRecoveryPosition *bool `json:"measureRecoveryPosition"`
+	MeasureVentilated       *bool `json:"measureVentilated"`
+	MeasureTourniquet       *bool `json:"measureTourniquet"`
+	MeasureInfusion         *bool `json:"measureInfusion"`
+
+	ConditionPrimary   *bool
+	ConditionSecondary *bool
 }
