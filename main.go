@@ -14,17 +14,6 @@ import (
 )
 
 func startGame(context *gin.Context) {
-	// var patients []models.Patient
-	// models.DB.Find(&patients)
-	// for _, patient := range patients {
-	// 	var patientstate models.PatientState
-	// 	models.DB.Model(patient).Related(&patientstate)
-	// 	// TODO: Change ugly meta-programming with reflect to a more elegant solution
-	// 	// Get the value of the Field of the patient specified by the string "patientstate.ConditionPrimary"
-	// 	test2 := reflect.Indirect(reflect.ValueOf(&patient)).FieldByName(patientstate.ConditionPrimary)
-	// 	fmt.Println(test2)
-
-	// }
 	//Initialize phase change times
 	var patients []models.Patient
 	models.DB.Find(&patients)
@@ -38,13 +27,9 @@ func startGame(context *gin.Context) {
 
 	// Start asynchronous timer that checks phase changes every second
 	ticker := time.NewTicker(time.Second)
-	done := make(chan bool)
-
 	go func() {
 		for {
 			select {
-			case <-done:
-				return
 			case <-ticker.C:
 				var patients []models.Patient
 				models.DB.Find(&patients)
@@ -93,8 +78,6 @@ func handleRequests() *gin.Engine {
 	myRouter.GET("/patientstates/:id", controllers.ReturnSinglePatientState)
 	myRouter.GET("/startgame", startGame)
 	myRouter.GET("/", homePage)
-	//log.Fatal(http.ListenAndServe(":8000", myRouter))
-
 	return myRouter
 }
 
